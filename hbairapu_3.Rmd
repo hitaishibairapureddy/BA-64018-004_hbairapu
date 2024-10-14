@@ -1,0 +1,252 @@
+---
+title: "Assignment3_QMM"
+author: "Hitaishi Bairapureddy"
+date: "2024-10-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Question:
+
+ +  Heart Start produces automated external defibrillators (AEDs) in each of two different plants (A
+and B). The unit production costs and monthly production capacity of the two plants are
+indicated in the table below. The AEDs are sold through three wholesalers. The shipping cost
+from each plant to the warehouse of each wholesaler along with the monthly demand from each
+wholesaler are also indicated in the table. How many AEDs should be produced in each plant,
+and how should they be distributed to each of the three wholesaler warehouses so as to minimize
+the combined cost of production and shipping?
+
+
+```{r}
+# Load lpSolve package
+#install.packages("lpSolve")
+library(lpSolve)
+```
+
+
+```{r}
+# Creating a dataframe for the transportation problem
+transport_data <- data.frame(Warehouse_A = c("$22", "$16", 80),
+                              Warehouse_B = c("$14", "$20", 60),
+                              Warehouse_C = c("$30", "$24", 70),
+                              Production_Cost_Per_Unit = c("$600", "$625", " "),
+                              Monthly_Capacity = c(100, 120, " "))
+rownames(transport_data) <- c("Plant 1", "Plant 2", "Total Demand")
+
+# Generating a formatted table
+library(knitr)
+# install.packages("kableExtra")
+library(kableExtra)
+
+transport_data %>%
+  kable() %>%
+  kable_classic(full_width = FALSE, html_font = "Arial") %>%
+  column_spec(1, border_right = TRUE, bold = TRUE, color = "white", background = "#2c3e50") %>%
+  column_spec(2:4, background = "#ecf0f1") %>%
+  column_spec(4, border_right = TRUE) %>%
+  column_spec(5:6, background = "#e8f8f5") %>%
+  row_spec(2, extra_css = "border-bottom: 2px solid #34495e") %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#3498db") %>%
+  add_header_above(header = c(" " = 1, "Unit Shipping Cost" = 3, " " = 2), 
+                   color = "white", background = "#2980b9")
+
+```
+
+## STEPS
+
+### 1. Setup of Decision Variables
+
+Let:
+- **\(x_{A1}\)**: units shipped from Plant A to Warehouse 1
+- **\(x_{A2}\)**: units shipped from Plant A to Warehouse 2
+- **\(x_{A3}\)**: units shipped from Plant A to Warehouse 3
+- **\(x_{B1}\)**: units shipped from Plant B to Warehouse 1
+- **\(x_{B2}\)**: units shipped from Plant B to Warehouse 2
+- **\(x_{B3}\)**: units shipped from Plant B to Warehouse 3
+
+### 2. Objective Function
+
+The total cost \(Z\) consists of both production and shipping costs. The combined cost function to minimize is given by:
+
+\[
+Z = 600(x_{A1} + x_{A2} + x_{A3}) + 625(x_{B1} + x_{B2} + x_{B3}) + 22x_{A1} + 14x_{A2} + 30x_{A3} + 16x_{B1} + 20x_{B2} + 24x_{B3}
+\]
+
+### 3. Constraints
+
+#### Demand Constraints:
+- For Warehouse 1:
+\[
+x_{A1} + x_{B1} = 80
+\]
+- For Warehouse 2:
+\[
+x_{A2} + x_{B2} = 60
+\]
+- For Warehouse 3:
+\[
+x_{A3} + x_{B3} = 70
+\]
+
+#### Supply Constraints:
+- Plant A's capacity:
+\[
+x_{A1} + x_{A2} + x_{A3} \leq 100
+\]
+- Plant B's capacity:
+\[
+x_{B1} + x_{B2} + x_{B3} \leq 120
+\]
+
+#### Non-negativity Constraints:
+\[
+x_{A1}, x_{A2}, x_{A3}, x_{B1}, x_{B2}, x_{B3} \geq 0
+\]
+
+## Mathematical Formulation
+
+We aim to minimize the total production and shipping cost, subject to the demand and supply constraints.
+
+
+
+Minimize:
+
+\[
+Z = 600(x_{A1} + x_{A2} + x_{A3}) + 625(x_{B1} + x_{B2} + x_{B3}) + 22x_{A1} + 14x_{A2} + 30x_{A3} + 16x_{B1} + 20x_{B2} + 24x_{B3}
+\]
+
+### Subject to:
+
+- Demand Constraints:
+
+\[
+x_{A1} + x_{B1} = 80
+\]
+\[
+x_{A2} + x_{B2} = 60
+\]
+\[
+x_{A3} + x_{B3} = 70
+\]
+
+- Supply Constraints:
+
+\[
+x_{A1} + x_{A2} + x_{A3} \leq 100
+\]
+\[
+x_{B1} + x_{B2} + x_{B3} \leq 120
+\]
+
+- Non-Negativity Constraints:
+
+\[
+x_{A1}, x_{A2}, x_{A3}, x_{B1}, x_{B2}, x_{B3} \geq 0
+\]
+
+This formulation includes all the necessary constraints and objective function for the transportation problem. Next, we can use this model to solve for the optimal values using linear programming methods.
+
+
+```{r}
+# Specifying the costs related to production and shipping.
+# Order of decision variables:
+# [Plant 1 to Warehouse A, plant 1 to Warehouse B, plant 1 to Warehouse C, 
+#  Plant 2 to Warehouse A, plant 2 to Warehouse B, plant 2 to Warehouse C]
+production_shipping_costs <- c(600 + 22, 600 + 14, 600 + 30, 
+                               625 + 16, 625 + 20, 625 + 24)
+
+```
+
+
+```{r}
+# Establishing the matrix to represent all constraints for the transportation problem.
+# Each row corresponds to a specific constraint:
+# 1) Capacity of plant 1, 2) Capacity of plant 2
+# 3) Demand at Warehouse A, 4) Demand at Warehouse B, 5) Demand at Warehouse C
+constraint_matrix <- matrix(c(1, 1, 1, 0, 0, 0,   # Capacity for Plant 1
+                              0, 0, 0, 1, 1, 1,   # Capacity for Plant 2
+                              1, 0, 0, 1, 0, 0,   # Demand for Warehouse A
+                              0, 1, 0, 0, 1, 0,   # Demand for Warehouse B
+                              0, 0, 1, 0, 0, 1),  # Demand for Warehouse C
+                            nrow = 5, byrow = TRUE)
+
+```
+
+
+
+```{r}
+# Specifying the right-hand side values for the constraints.
+rhs_values <- c(100, 120, 80, 60, 70)  # Capacities and Demands
+
+```
+
+
+
+```{r}
+# Defining the relationship types for the constraints
+# "less than or equal to" for factory capacities, "equal to" for warehouse demands
+constraint_directions <- c("<=", "<=", "=", "=", "=")
+
+```
+
+```{r}
+# Solving the transportation problem using the lp() function
+transport_solution <- lp("min", production_shipping_costs, constraint_matrix, constraint_directions, rhs_values)
+transport_solution
+
+```
+
+```{r}
+# Outputting the results
+if (transport_solution$status == 0) 
+  # If an optimal solution is found then print the results
+  print("Optimal solution found:")
+  transport_solution$solution_matrix <- matrix(transport_solution$solution, nrow = 2, byrow = TRUE)
+  rownames(transport_solution$solution_matrix) <- c("Plant A", "Plant B")
+  colnames(transport_solution$solution_matrix) <- c("Warehouse 1", "Warehouse 2", "Warehouse 3")
+  print(transport_solution$solution_matrix)
+
+
+```
+
+```{r}
+# Print the optimal solution (how much to ship from each plant(plant 1 and plant 2) to each warehouse)
+print("Optimal number of AEDs shipped from each plant to each warehouse:")
+transport_solution$solution
+```
+
+
+
+```{r}
+# Printing the minimized total cost without the dollar sign
+print(paste("Minimized total cost value: ", transport_solution$objval))
+
+```
+
+## Conclusion:
+
+The optimal solution demonstrates an efficient allocation of production and distribution that minimizes costs while meeting all demand and capacity constraints. By utilizing Plant A at full capacity and Plant B slightly under capacity, Heart Start can effectively meet the demand of all three warehouses.
+
+
+### Key findings:
+
+Plant A should produce 100 units (at full capacity):
+
+60 units shipped to Warehouse B
+40 units shipped to Warehouse C
+
+
+Plant B should produce 110 units (10 under capacity):
+
+80 units shipped to Warehouse A
+30 units shipped to Warehouse C
+
+
+The minimized total cost is $132,790.
+
+
+This solution highlights the importance of strategic planning in supply chain management. It shows that the lowest-cost option isn't always to produce at the plant with the lowest production cost, as shipping costs play a crucial role in the overall expense.

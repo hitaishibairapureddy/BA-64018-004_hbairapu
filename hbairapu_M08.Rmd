@@ -1,0 +1,318 @@
+---
+title: "QMM_DEA_module8"
+author: "Hitaishi Bairapureddy"
+date: "2024-10-23"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#### Problem: 
+
+The Hope Valley Health Care Association owns and operates six nursing homes in adjoining
+states. An evaluation of their efficiency has been undertaken using two inputs and two outputs.
+The inputs are staffing labor (measured in average hours per day) and the cost of supplies (in
+thousands of dollars per day). The outputs are the number of patient-days reimbursed by third-
+party sources and the number of patient-days reimbursed privately. A summary of performance
+data is shown in the table below
+
+
+
+```{r}
+# Install and load required packages
+#if (!require("Benchmarking")) install.packages("Benchmarking")
+library(Benchmarking)
+```
+
+
+```{r}
+#install.packages("knitr")        # For basic table formatting
+#install.packages("kableExtra")   # Optional: For more advanced formatting options
+library(knitr)
+library(kableExtra)
+
+```
+
+
+```{r}
+h_data <- data.frame(
+ DMU = c("Facility 1", "Facility 2", "Facility 3", "Facility 4", "Facility 5", "Facility 6"), 
+Staff_hours_per_day = c(150, 400, 320, 520, 350, 320), 
+Supplies_per_day = c(0.2, 0.7, 1.2, 2.0 , 1.2, 0.7),
+ Reimbursed_patient_days = c(14000, 14000, 42000, 28000, 19000, 14000),
+ Privately_paid_patient_days = c(3500, 21000, 10500, 42000, 25000, 15000)
+ )
+```
+
+```{r}
+kable(h_data, format = "pandoc", caption = "Hope Valley Health Care Association ")
+```
+
+
+
+```{r}
+# Create sample data for the 6 nursing homes
+# Inputs: staffing hours/day, supplies cost (thousands$/day)
+# Outputs: third-party reimbursed patient-days, privately reimbursed patient-days
+X <- matrix(c(150, 400, 320, 520, 350, 320,
+ 0.2, 0.7, 1.2, 2.0, 1.2, 0.7), ncol = 2)
+ colnames(X) <- c('Staffing Labor', 'Cost of Supplies')
+Y <- matrix(c(14, 14, 42, 28, 19, 14,
+            3.500,21,10,42,25,15),ncol=2) * 1000
+ colnames(Y) <-c('Reimbursedbythird-party', 'Reimbursedprivately')
+```
+
+### Question 1: Formulate and perform DEA analysis under all DEA assumptions of FDH, CRS, VRS, IRS, DRS, and FRH
+
+```{r}
+# Function to perform DEA analysis under different assumptions
+perform_dea <- function(X, Y, rts) {
+  dea_result <- dea(X, Y, RTS=rts)
+  eff_scores <- eff(dea_result)
+  peers <- peers(dea_result)
+  lambdas <- lambda(dea_result)
+  return(list(
+    efficiency = eff_scores,
+    peers = peers,
+    lambdas = lambdas
+  ))
+}
+```
+
+
+```{r}
+# Perform DEA under different assumptions
+# FDH - Free Disposal Hull
+fdh_result <- dea(X, Y, RTS="fdh")
+fdh_result
+dea.plot(X,Y,RTS = "fdh",txt = rownames(X))
+```
+
+
+```{r}
+# CRS - Constant Returns to Scale
+crs_result <- dea(X, Y, RTS="crs")
+crs_result
+dea.plot(X,Y,RTS = "crs",txt = rownames(X))
+
+```
+
+```{r}
+# VRS - Variable Returns to Scale
+vrs_result <- dea(X, Y, RTS="vrs")
+vrs_result
+dea.plot(X,Y,RTS = "vrs",txt = rownames(X))
+
+```
+
+```{r}
+# IRS - Increasing Returns to Scale
+irs_result <- dea(X, Y, RTS="irs")
+irs_result
+dea.plot(X,Y,RTS = "irs",txt = rownames(X))
+
+```
+
+```{r}
+# DRS - Decreasing Returns to Scale
+drs_result <- dea(X, Y, RTS="drs")
+drs_result
+dea.plot(X,Y,RTS = "drs",txt = rownames(X))
+
+```
+
+
+```{r}
+# FRH - Free Replicability Hull (using additive model as approximation)
+frh_result <- dea(X, Y, RTS="add")
+frh_result
+dea.plot(X,Y,RTS = "add",txt = rownames(X))
+
+```
+
+#### Key Findings:
+
+ The DEA analysis under the six different assumptions—FDH, CRS, VRS, IRS, DRS, and FRH—allows for a comprehensive evaluation of each nursing home’s operational efficiency. Results show that all nursing homes achieved full efficiency under FDH and FRH assumptions, as indicated by efficiency scores of 1 across the board. However, under CRS and DRS, only four facilities reached full efficiency, reflecting the sensitivity of efficiency scores to returns-to-scale assumptions. The variations in efficiency scores indicate that some nursing homes may benefit from re-evaluating their scale of operations to optimize efficiency under specific assumptions.
+
+
+
+
+### Question 2: Determine the Peers and Lambdas under each of the above assumption
+
+```{r}
+fdh_eff <- eff(fdh_result)
+fdh_peers <- peers(fdh_result)
+fdh_peers
+fdh_lambda <- lambda(fdh_result)
+fdh_lambda
+
+```
+
+```{r}
+#CRS - Constant Returns to Scale 
+crs_eff <- eff(crs_result)
+crs_peers <- peers(crs_result)
+crs_peers
+crs_lambda <- lambda(crs_result)
+crs_lambda
+```
+
+```{r}
+#VRS - Variable Returns to Scale 
+vrs_eff <- eff(vrs_result)
+vrs_peers <- peers(vrs_result)
+vrs_peers
+vrs_lambda <- lambda(vrs_result)
+vrs_lambda
+```
+
+
+```{r}
+#IRS - Increasing Returns to Scale 
+irs_eff <- eff(irs_result)
+irs_peers <- peers(irs_result)
+irs_peers
+irs_lambda <- lambda(irs_result)
+irs_lambda
+```
+
+```{r}
+#DRS - Decreasing Returns to Scale 
+drs_eff <- eff(drs_result)
+drs_peers <- peers(drs_result)
+drs_peers
+drs_lambda <- lambda(drs_result)
+drs_lambda
+```
+
+```{r}
+#FRH - Free Replicability Hull
+frh_eff <- eff(frh_result)
+frh_peers <- peers(frh_result)
+frh_peers
+frh_lambda <- lambda(frh_result)
+frh_lambda
+```
+
+
+```{r}
+# Create summary table
+summary_df <- data.frame(
+  NursingHome = paste("NH", 1:6),
+  FDH = fdh_eff,
+  CRS = crs_eff,
+  VRS = vrs_eff,
+  IRS = irs_eff,
+  DRS = drs_eff,
+  FRH = frh_eff
+)
+
+```
+
+#### Key Findings:
+ 
+ The peer and lambda results highlight which nursing homes serve as benchmarks under each DEA assumption, indicating the best practices in resource utilization. For instance, under CRS, peers for the less efficient homes include combinations of the fully efficient facilities, suggesting that these efficient peers have desirable operating characteristics. The lambda values show the extent to which each inefficient facility would need to emulate the practices of their peers to achieve efficiency. Facilities with a lambda weight closer to 1 for their peer groups are closer to achieving efficiency.
+
+
+### Question 3. Summarize your results in a tabular format
+
+```{r}
+# Print results
+print("Efficiency Scores Under Different DEA Assumptions:")
+print(summary_df)
+```
+
+```{r}
+# Print peers and lambdas for each assumption
+cat("\nPeers and Lambdas for FDH:\n")
+print(data.frame(Peers=fdh_peers, Lambda=round(fdh_lambda, 3)))
+
+cat("\nPeers and Lambdas for CRS:\n")
+print(data.frame(Peers=crs_peers, Lambda=round(crs_lambda, 3)))
+
+cat("\nPeers and Lambdas for VRS:\n")
+print(data.frame(Peers=vrs_peers, Lambda=round(vrs_lambda, 3)))
+
+cat("\nPeers and Lambdas for IRS:\n")
+print(data.frame(Peers=irs_peers, Lambda=round(irs_lambda, 3)))
+
+cat("\nPeers and Lambdas for DRS:\n")
+print(data.frame(Peers=drs_peers, Lambda=round(drs_lambda, 3)))
+
+cat("\nPeers and Lambdas for FRH:\n")
+print(data.frame(Peers=frh_peers, Lambda=round(frh_lambda, 3)))
+
+```
+
+
+#### Key Findings:
+
+##### Efficiency Scores
+
+The efficiency scores across different DEA assumptions reveal interesting patterns:
+Under Free Disposal Hull (FDH) and Free Replicability Hull (FRH) assumptions, all six nursing homes appear to be fully efficient (score of 1)1
+
+Constant Returns to Scale (CRS) and Decreasing Returns to Scale (DRS) models show identical results, with Nursing Homes 1-4 being fully efficient, while Nursing Home 5 (0.9775) and Nursing Home 6 (0.8675) show some inefficiency1
+
+Variable Returns to Scale (VRS) and Increasing Returns to Scale (IRS) models also yield identical results, with only Nursing Home 6 showing inefficiency (0.8963).
+
+
+##### Peer Analysis
+
+The peer analysis provides insights into benchmark facilities for inefficient units:
+Under CRS and DRS, Nursing Homes 1, 2, and 4 serve as peers for the inefficient Nursing Homes 5 and 61
+
+Under VRS and IRS, Nursing Homes 1, 2, and 5 are peers for the inefficient Nursing Home 61
+
+##### Lambda Values
+
+Lambda values indicate the weight of each peer in the efficiency calculation:
+For Nursing Home 5 under CRS/DRS: Facility 4 has the highest influence (λ ≈ 0.538), followed by Facility 1 (λ ≈ 0.200) and Facility 2 (λ ≈ 0.080).
+
+For Nursing Home 6 under VRS/IRS: Facility 1 has the highest influence (λ ≈ 0.401), followed closely by Facility 2 (λ ≈ 0.342) and Facility 5 (λ ≈ 0.256)
+
+
+
+
+
+
+
+### Question 4. Compare and contrast the above results
+
+```{r}
+# Compare results
+cat("\nComparison of Average Efficiency Scores:\n")
+averages <- colMeans(summary_df[,-1])
+print(round(averages, 3))
+
+cat("\nNumber of Efficient Units (efficiency = 1):\n")
+efficient_units <- colSums(summary_df[,-1] >= 0.999)
+print(efficient_units)
+```
+#### Key Findings:
+
+The comparison of average efficiency scores across the different assumptions (FDH, CRS, VRS, IRS, DRS, and FRH) reveals a pattern where efficiency is generally highest under FDH and FRH. The average scores under CRS and DRS are slightly lower, reflecting the stricter requirements for efficiency in these models. Additionally, the number of facilities achieving full efficiency varies, with all six facilities achieving efficiency under FDH and FRH, but only four achieving full efficiency under CRS. This analysis provides insight into the operational flexibility of each nursing home and highlights areas where adjustments in scale or resource allocation may yield efficiency gains.
+
+
+#### Conclusion:
+
++ Overall Efficiency: Most nursing homes in the Hope Valley Health Care Association demonstrate high efficiency across various DEA models. Nursing Homes 1-4 consistently show full efficiency, indicating they are operating at optimal levels.
+
++ Areas for Improvement: Nursing Homes 5 and 6 show potential for improvement, particularly under CRS and DRS assumptions. Nursing Home 6 appears to be the least efficient across all models where inefficiency is detected.
+
++ Scale Efficiency: The differences in efficiency scores between CRS and VRS models suggest that scale efficiency may be a factor, especially for Nursing Homes 5 and 6.
+
++ Benchmarking: Nursing Homes 1, 2, and 4 emerge as strong performers and could serve as benchmarks for improving the efficiency of other facilities, especially Nursing Homes 5 and 6.
+
++ Returns to Scale: The identical results for CRS/DRS and VRS/IRS pairs suggest that the facilities might be operating under constant or decreasing returns to scale, with no clear evidence of increasing returns to scale.
+
++ Resource Allocation: Management should focus on optimizing resource allocation in Nursing Homes 5 and 6, potentially by studying the practices of their more efficient peers.
+
++ Further Investigation: While the DEA provides valuable insights, it's crucial to complement these findings with qualitative analysis to understand the underlying factors contributing to efficiency differences among the nursing homes.
+
+

@@ -1,0 +1,203 @@
+---
+title: "QMM_module9"
+author: "Hitaishi Bairapureddy"
+date: "2024-11-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### **Problem**:
+
+The Research and Development Division of the Emax Corporation has developed three new
+products. A decision now needs to be made on which mix of these products should be produced.
+Management wants primary consideration given to three factors: total profit, stability in the
+workforce, and achieving an increase in the company’s earnings next year from the $75 million
+achieved this year. In particular, using the units given in the following table, they want to
+Maximize Z = P - 6C - 3D, where
+P = total (discounted) profit over the life of the new products,
+C = change (in either direction) in the current level of employment,
+D = decrease (if any) in next year’s earnings from the current year’s level.
+The amount of any increase in earnings does not enter into Z, because management is concerned
+primarily with just achieving some increase to keep the stockholders happy. (It has mixed
+feelings about a large increase that then would be difficult to surpass in subsequent years.)
+The impact of each of the new products (per unit rate of production) on each of these factors is
+shown in the following table.
+
+
+
+
+```{r}
+#install.packages(knitr)
+library(knitr)
+library(kableExtra)
+```
+
+#### Defining the Data frame
+```{r}
+library(dplyr)
+# Create the data frame
+data_emax <- data.frame(
+  Factor = c("Total Profit", "Employment level", "Earning next year"),
+  x = c(20, 6, 8),
+  y = c(15, 4, 7),
+  z = c(25, 5, 5),
+  Goal = c("Maximize", "=50", ">=75"),
+  Units_of_data = c("Millions of dollars", "Hundreds of employees", "Millions of dollars"),
+  Penalties = c(" ", "(±)6", "-3")
+)
+
+# Format the table with color and improved styling
+data_emax %>%
+  kable(align = "c", col.names = c("Factor", "x", "y", "z", "Goal", "Units of Data", "Penalties")) %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  add_header_above(c(" " = 1, "Product" = 3, " " = 3), bold = TRUE, background = "#FFD700") %>%
+  add_header_above(c(" " = 1, "Unit Contribution" = 3, " " = 3), bold = TRUE, background = "#FF8C00") %>%
+  column_spec(1, border_right = TRUE, bold = TRUE, color = "#1E90FF") %>%
+  column_spec(4, border_right = TRUE) %>%
+  column_spec(5, border_right = TRUE, color = "#FF6347") %>%
+  column_spec(6, border_right = TRUE, color = "#32CD32") %>%
+  row_spec(0, bold = TRUE, background = "#4682B4", color = "white")
+
+```
+
+
+##### **Question 1: Define y1+ and y1-, respectively, as the amount over (if any) and the amount under (if any) the employmentlevel goal. Define y2+ and y2- in the same way for the goal regarding earnings next year. Define x1, x2, and x3 as the production rates of Products 1, 2, and 3, respectively. With these definitions, use the goal programmingtechnique to express y1+, y1- , y2+ and y2- algebraically in terms of x1, x2, and x3. Also, express P in terms of x1,x2, and x3.**
+
+
+Employment Level (Target = 50):
+The constraint for "Employment Level" is set as "=" because the company aims to maintain this level precisely, without going above or below the target. As a result, any deviation from this target is penalized in both directions.
+
+Earnings Next Year (Target ≥ 75):
+For "Earnings Next Year," the company has a minimum target of 75, meaning any shortfall below this threshold is penalized. However, exceeding the target is not penalized, making this a one-sided constraint focused on avoiding earnings below 75.
+
+**Formulating Deviation Equations**
+
+Using the notation \( y_i = y_i^+ + y_i^- \), where:
+
+- \( y_1^+ \) represents any overachievement of the employment target,
+- \( y_1^- \) represents any shortfall below the employment target,
+- \( y_2^+ \) represents any overachievement of the earnings target, and
+- \( y_2^- \) represents any shortfall below the earnings target.
+
+
+**Objective Function in Terms of** \( x_1 \), \( x_2 \), \( x_3 \), \( y_1^+ \), \( y_1^- \), \( y_2^+ \), and \( y_2^- \)
+The objective is to maximize:
+\begin{equation}
+Z = (20x_1 + 15x_2 + 25x_3) - 6(y_1^+ + y_1^-) - 3y_2^-
+\end{equation}
+
+
+The objective function can be expressed as:
+\[
+P = 20x_1 + 15x_2 + 25x_3
+\]
+
+**Deviation Form of Constraints**
+
+1. **Employment Level Constraint**
+
+   The target for the employment level is fixed at 50. In deviation form, this is written as:
+   
+\begin{equation}
+6x_1 + 4x_2 + 5x_3 + (y_1^- - y_1^+) = 50
+\end{equation}
+
+2. **Earnings Next Year Constraint**
+
+   The goal for next year's earnings is to meet or exceed 75. In deviation form, this constraint becomes:
+   \begin{equation}
+8x_1 + 7x_2 + 5x_3 + (y_2^- - y_2^+) = 75
+\end{equation}
+
+**Non-Negativity Constraints**
+
+All decision variables and deviation terms must satisfy non-negativity constraints:
+
+\begin{equation}
+x_1, x_2, x_3, y_1^+, y_1^-, y_2^+, y_2^- \geq 0
+\end{equation}
+
+
+
+#### **Question 2: Express management’s objective function in terms of x1, x2, x3, y1+, y1- , y2+ and y2-?**
+
+**Objective Function**
+
+\begin{equation}
+\text{Maximize } Z = (20x_1 + 15x_2 + 25x_3) - 6(y_1^+ + y_1^-) - 3y_2^- \tag{2}
+\end{equation}
+Expanding the equation:
+
+\begin{equation}
+\text{Maximize } Z = 20x_1 + 15x_2 + 25x_3 - 6y_1^+ - 6y_1^- - 3y_2^- \tag{3}
+\end{equation}
+
+#### **Question 3: Formulate and solve the linear programming model. What are your findings?**
+
+
+```{r}
+#Loading required packages
+library(lpSolve)
+library(lpSolveAPI)
+```
+
+
+```{r}
+lp <- make.lp(2, 7)
+# Products x, y, z (x1, x2, x3), Employment change (+/-) (y1p, y1m), Earnings change (+/-) (y2p, y2m)
+set.objfn(lp, c(20, 15, 25, -6, -6, 0, -3))
+lp.control(lp, sense="max")
+# Employment level constraint: 6x1 + 4x2 + 5x3 - y1p + y1m = 50
+set.row(lp, 1, c(6, 4, 5, -1, 1, 0, 0), indices = c(1:7))
+# Earnings constraint: 8x1 + 7x2 + 5x3 - y2p + y2m = 75
+set.row(lp, 2, c(8, 7, 5, 0, 0, -1, 1), indices = c(1:7))
+
+# Set right-hand side values
+set.rhs(lp, c(50, 75))
+
+# Set constraint types (= for both constraints)
+set.constr.type(lp, c("=", "="))
+
+# Set lower bounds for all variables to 0
+set.bounds(lp, lower = rep(0, 7))
+
+# Set row and column names
+lp.rownames <- c("Employment Level", "Earnings")
+lp.colnames <- c("x", "y", "z", "y1p", "y1m", "y2p", "y2m")
+
+# Solve the LP
+solve(lp)
+```
+
+After optimizing, the value of objective function is 
+```{r}
+get.objective(lp)
+```
+Decision Variables are
+```{r}
+get.variables(lp)
+```
+The Linear Programming (LP) problem was successfully solved using the specified objective function and constraints, yielding an optimal objective value of 225. The decision variables in the optimal solution are as follows:
+
+\[
+\begin{align*}
+x_1 &= 0, \\
+x_2 &= 0, \\
+x_3 &= 15, \\
+y_1^+ &= 25, \\
+y_1^- &= 0, \\
+y_2^+ &= 0, \\
+y_2^- &= 0.
+\end{align*}
+\]
+
+
+#### **Conclusion:**
+
+The optimization model for EMAX Corporation reveals that the optimal production strategy is to focus exclusively on Product 3, producing 15 units. This solution yields a maximum objective value of 225, with no production of Products 1 and 2. The strategy will result in employment levels exceeding the target by 25 hundred employees, which incurs penalties but is offset by the higher profits. Product 3's production will generate exactly $75 million in earnings, meeting the minimum requirement without excess. The total profit contribution will be $375 million (15 units × $25 million per unit).
+The solution balances multiple objectives - maximizing profit while managing employment changes and meeting earnings targets. While this single-product strategy achieves optimal results, management should carefully plan the workforce expansion and consider maintaining minimal capability for other products to manage risks. Implementation should be phased, with close monitoring of key performance indicators, particularly employment costs and earnings performance.
+

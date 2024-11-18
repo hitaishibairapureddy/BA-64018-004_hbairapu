@@ -1,0 +1,152 @@
+---
+title: "Integer_Programming"
+author: "Hitaishi Bairapureddy"
+date: "2024-11-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Integer Programming Problem
+
+AP is a shipping service that guarantees overnight delivery of packages in the continental US. 
+The company has various hubs at major cities and airports across the country. Packages are 
+received at hubs, and then shipped to intermediate hubs or to their final destination. 
+The manager of the AP hub in Cleveland is concerned about labor costs, and is interested in 
+determining the most effective way to schedule workers. The hub operates seven days a week, 
+and the number of packages it handles varies from one day to another. The table below provides 
+an estimate of the number of workers needed each day of the week.
+
+### Decision Variables
+Number of workers assigned to each shift (1–7):  
+Let $x_1, x_2, \dots, x_7$ represent the number of workers for shifts 1 to 7.
+
+### Objective
+Minimize the total wage expenses:
+\[
+\text{Minimize: } 775x_1 + 800x_2 + 800x_3 + 800x_4 + 800x_5 + 775x_6 + 750x_7
+\]
+
+### Constraints
+Daily worker requirements:
+\[
+\begin{align*}
+\text{Sunday: } & x_1 + x_7 \geq 18 \\
+\text{Monday: } & x_1 + x_2 \geq 27 \\
+\text{Tuesday: } & x_2 + x_3 \geq 22 \\
+\text{Wednesday: } & x_3 + x_4 \geq 26 \\
+\text{Thursday: } & x_4 + x_5 \geq 25 \\
+\text{Friday: } & x_5 + x_6 \geq 21 \\
+\text{Saturday: } & x_6 + x_7 \geq 19
+\end{align*}
+\]
+
+### Decision Variables
+\[
+x_i \in \mathbb{Z}^+ \quad \text{for all } i = 1, 2, \dots, 7
+\]
+
+
+
+
+```{r}
+library(lpSolve)
+ library(lpSolveAPI)
+```
+
+
+```{r}
+days_worker <- matrix(c("Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday", 
+18, 27, 22, 26, 25, 21, 19), ncol = 2, byrow = F)
+ colnames(days_worker) <- c("days.of.the.week","workers.required")
+ as.table(days_worker)
+```
+
+
+```{r}
+ # Create an LP model with 0 constraints and 7 variables
+lpmodel <- make.lp(0, 7)
+
+# Set the objective function coefficients
+set.objfn(lpmodel, c(775, 800, 800, 800, 800, 775, 750))
+
+# Set variables 1 through 7 as integers
+set.type(lpmodel, columns = 1:7, type = "integer")
+
+# Set control parameters for the LP model (e.g., optimization sense)
+lp.control(lpmodel, sense = 'min')
+
+# Display the LP model to confirm the setup
+lpmodel
+```
+
+```{r}
+# Add constraints for workers required for each day
+add.constraint(lpmodel, c(0, 1, 1, 1, 1, 1, 0), ">=", 18) # Sunday
+add.constraint(lpmodel, c(0, 0, 1, 1, 1, 1, 1), ">=", 27) # Monday
+add.constraint(lpmodel, c(1, 0, 0, 1, 1, 1, 1), ">=", 22) # Tuesday
+add.constraint(lpmodel, c(1, 1, 0, 0, 1, 1, 1), ">=", 26) # Wednesday
+add.constraint(lpmodel, c(1, 1, 1, 0, 0, 1, 1), ">=", 25) # Thursday
+add.constraint(lpmodel, c(1, 1, 1, 1, 0, 0, 1), ">=", 21) # Friday
+add.constraint(lpmodel, c(1, 1, 1, 1, 1, 0, 0), ">=", 19) # Saturday
+```
+
+```{r}
+solve(lpmodel)
+lpmodel
+```
+
+
+```{r}
+get.objective(lpmodel)
+get.variables(lpmodel)
+get.constraints(lpmodel)
+```
+
+#### Sunday
+
+```{r}
+sum(get.variables(lpmodel)[c(2,3,4,5,6)])
+```
+
+#### Monday
+
+```{r}
+sum(get.variables(lpmodel)[c(3,4,5,6,7)])
+```
+
+#### Tuesday
+
+```{r}
+sum(get.variables(lpmodel)[c(1,4,5,6,7)])
+```
+
+#### Wednesday
+
+```{r}
+sum(get.variables(lpmodel)[c(1,2,5,6,7)])
+```
+
+#### Thursday
+
+```{r}
+sum(get.variables(lpmodel)[c(1,2,3,6,7)])
+```
+
+#### Friday
+
+```{r}
+sum(get.variables(lpmodel)[c(1,2,3,4,7)])
+```
+
+#### Saturday
+
+```{r}
+sum(get.variables(lpmodel)[c(1:5)])
+```
+
+### Conclusion
+
+The optimal worker scheduling solution for AP's Cleveland hub minimizes labor costs while meeting daily staffing requirements. The model determined that a total of 33 workers should be assigned across seven shifts, resulting in a minimum total wage expense of $25,675. The solution assigns 2, 4, 5, 0, 8, 1, and 13 workers to shifts 1 through 7 respectively, ensuring that each day's minimum staffing requirements are met or exceeded. This schedule is particularly efficient as it accounts for varying package volumes throughout the week, with heavier staffing during peak days. The solution demonstrates that AP can achieve significant cost savings while maintaining operational requirements by strategically distributing workers across shifts. The schedule successfully balances the trade-off between minimizing labor costs and ensuring adequate coverage for package handling operations throughout the week.
